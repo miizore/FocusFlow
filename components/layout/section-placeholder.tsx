@@ -19,35 +19,33 @@ export function SectionPlaceholder({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-      <div className="space-y-3">
-        <Badge
-          variant="secondary"
-          className="border border-white/10 bg-white/5 text-muted-foreground backdrop-blur"
-        >
-          {status}
-        </Badge>
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-          {title}
-        </h1>
-        <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
+      <div className="space-y-2 border-b border-zinc-800 pb-3">
+        <div className="flex items-center gap-2">
+          <Badge variant="outline">{status}</Badge>
+          <h1 className="text-sm font-semibold tracking-wide text-white uppercase font-mono">
+            {title}
+          </h1>
+        </div>
+        <p className="text-xs text-zinc-400">
           {description}
         </p>
       </div>
 
-      <Card className="border-0 bg-card/70 shadow-2xl shadow-black/40 ring-1 ring-white/10 backdrop-blur-xl">
+      <Card className="rounded-none border border-zinc-800 bg-black shadow-none">
         <CardHeader>
           <CardTitle>工作区</CardTitle>
           <CardDescription>
-            Phase 3.1 已完成壳层与主题；业务交互将在后续步骤接入。
+            Pro-Tool 视图就绪。
           </CardDescription>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
+        <CardContent className="text-xs text-zinc-400 font-mono">
           {children ?? (
-            <p>此区域将承载真实数据与交互组件。</p>
+            <p>此区域承载真实数据与交互组件。</p>
           )}
         </CardContent>
       </Card>
     </div>
   );
 }
+

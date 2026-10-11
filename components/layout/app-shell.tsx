@@ -4,37 +4,43 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
+  CheckSquare,
   FolderKanban,
+  LogOut,
   Timer,
   type LucideIcon,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 
 const NAV_ITEMS: {
   href: string;
   label: string;
-  description: string;
+  code: string;
   icon: LucideIcon;
 }[] = [
   {
     href: "/projects",
     label: "Projects",
-    description: "项目与待办流",
+    code: "PRJ",
     icon: FolderKanban,
   },
   {
     href: "/focus",
     label: "Focus",
-    description: "计时器与时间轴",
+    code: "FOC",
     icon: Timer,
+  },
+  {
+    href: "/habits",
+    label: "Habits",
+    code: "HBT",
+    icon: CheckSquare,
   },
   {
     href: "/analytics",
     label: "Analytics",
-    description: "日历与趋势",
+    code: "ANA",
     icon: BarChart3,
   },
 ];
@@ -43,111 +49,90 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <div className="relative flex min-h-full flex-1">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 overflow-hidden"
-      >
-        <div className="absolute -left-32 top-0 size-[28rem] rounded-full bg-klein/20 blur-3xl" />
-        <div className="absolute -right-24 bottom-0 size-[22rem] rounded-full bg-blue-900/30 blur-3xl" />
-      </div>
-
-      <aside className="relative z-10 flex w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar/80 backdrop-blur-xl">
-        <div className="px-5 py-6">
-          <Link href="/" className="group block space-y-1">
-            <p className="text-lg font-semibold tracking-tight text-foreground">
-              FocusFlow
-            </p>
-            <p className="text-xs text-muted-foreground transition-colors group-hover:text-foreground/80">
-              时间流 · 个人管理系统
-            </p>
+    <div className="flex h-screen w-screen overflow-hidden bg-black text-zinc-100 select-none">
+      {/* Pane 1: Ultra-narrow Icon Nav Bar (w-16, border-r border-zinc-800 bg-black) */}
+      <aside className="flex w-16 shrink-0 flex-col justify-between border-r border-zinc-800 bg-black py-3">
+        <div className="flex flex-col items-center gap-4">
+          <Link
+            href="/"
+            title="FocusFlow Command Center"
+            className="group flex size-10 items-center justify-center border border-zinc-800 bg-zinc-950 hover:border-[#002FA7] transition-colors"
+          >
+            <span className="font-mono text-sm font-bold tracking-tight text-white group-hover:text-blue-400">
+              FF
+            </span>
           </Link>
+
+          <nav className="flex flex-col items-center gap-1.5 w-full px-2">
+            {NAV_ITEMS.map((item) => {
+              const active =
+                pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const Icon = item.icon;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  title={`${item.label} (${item.code})`}
+                  className={cn(
+                    "flex size-11 w-full flex-col items-center justify-center gap-0.5 border text-center transition-colors",
+                    active
+                      ? "border-[#002FA7] bg-[#002FA7]/20 text-white"
+                      : "border-transparent text-zinc-400 hover:border-zinc-800 hover:bg-zinc-900 hover:text-zinc-200"
+                  )}
+                >
+                  <Icon className="size-4 shrink-0" />
+                  <span className="font-mono text-[9px] uppercase tracking-wider scale-90">
+                    {item.code}
+                  </span>
+                </Link>
+              );
+            })}
+          </nav>
         </div>
 
-        <Separator className="opacity-40" />
-
-        <nav className="flex flex-1 flex-col gap-1 p-3">
-          {NAV_ITEMS.map((item) => {
-            const active =
-              pathname === item.href || pathname.startsWith(`${item.href}/`);
-            const Icon = item.icon;
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-start gap-3 rounded-xl px-3 py-3 transition-colors",
-                  active
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-klein/30"
-                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                )}
-              >
-                <Icon
-                  className={cn(
-                    "mt-0.5 size-4 shrink-0",
-                    active ? "opacity-100" : "opacity-70"
-                  )}
-                />
-                <span className="min-w-0">
-                  <span className="block text-sm font-medium leading-none">
-                    {item.label}
-                  </span>
-                  <span
-                    className={cn(
-                      "mt-1 block text-xs leading-snug",
-                      active
-                        ? "text-sidebar-primary-foreground/75"
-                        : "text-muted-foreground"
-                    )}
-                  >
-                    {item.description}
-                  </span>
-                </span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="space-y-3 border-t border-sidebar-border p-4">
-          <p className="text-[11px] leading-relaxed text-muted-foreground">
-            Dark · Klein Blue · Timeline-first
-          </p>
-          <form action={logout}>
-            <Button
+        <div className="flex flex-col items-center gap-2 px-2">
+          <form action={logout} className="w-full">
+            <button
               type="submit"
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start text-muted-foreground hover:text-foreground"
+              title="退出登录"
+              className="flex size-11 w-full flex-col items-center justify-center border border-transparent text-zinc-500 hover:border-[#BC0C0C] hover:bg-zinc-950 hover:text-[#BC0C0C] transition-colors cursor-pointer"
             >
-              退出登录
-            </Button>
+              <LogOut className="size-4 shrink-0" />
+              <span className="font-mono text-[9px] scale-90 uppercase">OUT</span>
+            </button>
           </form>
         </div>
       </aside>
 
-      <div className="relative z-10 flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 border-b border-white/5 bg-background/60 px-6 py-4 backdrop-blur-xl">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-xs tracking-wide text-muted-foreground uppercase">
-                FocusFlow
-              </p>
-              <p className="text-sm text-foreground/90">
-                所有功能收敛于专注时间轴
-              </p>
-            </div>
-            <div className="hidden items-center gap-2 sm:flex">
-              <span className="size-2 rounded-full bg-klein" />
-              <span className="text-xs text-muted-foreground">
-                Phase 3 · Web Ready
-              </span>
-            </div>
+      {/* Main Container: No card floating, direct border grid */}
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-black">
+        {/* Top Minimal Bar */}
+        <header className="flex h-10 shrink-0 items-center justify-between border-b border-zinc-800 bg-black px-4">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs font-semibold text-white tracking-wider uppercase">
+              FOCUSFLOW // COMMAND CENTER
+            </span>
+            <span className="text-zinc-700">|</span>
+            <span className="font-mono text-[11px] text-zinc-400">
+              {pathname}
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="size-1.5 bg-[#002FA7]" />
+            <span className="font-mono text-[11px] text-zinc-500 uppercase">
+              SYSTEM ONLINE
+            </span>
           </div>
         </header>
 
-        <main className="flex-1 px-6 py-8">{children}</main>
+        {/* Content Body */}
+        <main className="flex-1 overflow-auto bg-black p-0 select-text">
+          {children}
+        </main>
       </div>
     </div>
   );
 }
+
+

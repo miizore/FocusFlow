@@ -1,49 +1,37 @@
-import { Suspense } from "react";
+﻿import { Suspense } from "react";
 import { connection } from "next/server";
-import {
-  getFocusTrendLast14Days,
-  getMonthTaskCompletion,
-} from "@/app/actions/analytics";
+import { getProAnalytics } from "@/app/actions/analytics";
 import { AnalyticsDashboard } from "@/components/analytics/analytics-dashboard";
 
 function AnalyticsSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-8">
-      <div className="space-y-2">
-        <div className="h-9 w-40 animate-pulse rounded-lg bg-white/5" />
-        <div className="h-4 w-72 max-w-full animate-pulse rounded bg-white/5" />
+    <div className="flex h-full w-full flex-col bg-black p-6 space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="h-24 bg-zinc-950 animate-pulse border border-zinc-800" />
+        <div className="h-24 bg-zinc-950 animate-pulse border border-zinc-800" />
       </div>
-      <div className="h-64 animate-pulse rounded-2xl bg-white/5" />
-      <div className="h-72 animate-pulse rounded-2xl bg-white/5" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="h-72 bg-zinc-950 animate-pulse border border-zinc-800" />
+        <div className="h-72 bg-zinc-950 animate-pulse border border-zinc-800" />
+      </div>
+      <div className="h-44 bg-zinc-950 animate-pulse border border-zinc-800" />
     </div>
   );
 }
 
 async function AnalyticsContent() {
   await connection();
-  const now = new Date();
-  const [monthResult, trendResult] = await Promise.all([
-    getMonthTaskCompletion(now.getFullYear(), now.getMonth()),
-    getFocusTrendLast14Days(),
-  ]);
+  const res = await getProAnalytics();
 
-  if (!monthResult.success || !trendResult.success || !monthResult.data) {
+  if (!res.success || !res.data) {
     return (
-      <p className="rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive ring-1 ring-destructive/30">
-        数据加载失败：
-        {monthResult.error || trendResult.error || "未知错误"}
-      </p>
+      <div className="border border-red-900 bg-red-950/60 p-4 font-mono text-xs text-red-400 m-6">
+        DATA_LOAD_ERROR: {res.error || "UNKNOWN"}
+      </div>
     );
   }
 
-  return (
-    <AnalyticsDashboard
-      monthLabel={monthResult.data.label}
-      cells={monthResult.data.cells}
-      totalCompleted={monthResult.data.totalCompleted}
-      trend={trendResult.data ?? []}
-    />
-  );
+  return <AnalyticsDashboard data={res.data} />;
 }
 
 export default function AnalyticsPage() {

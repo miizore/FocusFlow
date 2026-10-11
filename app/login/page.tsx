@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Shield } from "lucide-react";
 
 const initialState: AuthActionState = { success: false };
 
@@ -22,50 +23,57 @@ export default function LoginPage() {
   );
 
   return (
-    <div className="relative flex min-h-full flex-1 items-center justify-center px-4">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 overflow-hidden"
-      >
-        <div className="absolute left-1/2 top-0 size-[28rem] -translate-x-1/2 rounded-full bg-klein/25 blur-3xl" />
-        <div className="absolute bottom-0 right-0 size-[18rem] rounded-full bg-blue-950/40 blur-3xl" />
-      </div>
-
-      <Card className="relative z-10 w-full max-w-md border-0 bg-card/70 shadow-2xl shadow-black/50 ring-1 ring-white/10 backdrop-blur-xl">
-        <CardHeader className="space-y-3">
-          <p className="text-sm tracking-[0.2em] text-klein uppercase">
-            FocusFlow
-          </p>
-          <CardTitle className="text-2xl">进入工作区</CardTitle>
-          <CardDescription>
-            单用户模式：输入管理员口令以继续。口令由环境变量{" "}
-            <code className="text-foreground/80">ADMIN_PASSPHRASE</code>{" "}
-            配置。
+    <div className="flex min-h-screen w-full items-center justify-center bg-black p-4 text-zinc-100">
+      <Card className="w-full max-w-sm rounded-none border border-zinc-800 bg-black p-2 shadow-none">
+        <CardHeader className="space-y-2 border-b border-zinc-800 pb-4">
+          <div className="flex items-center gap-2">
+            <span className="flex size-6 items-center justify-center border border-blue-600 bg-blue-600/20 text-blue-500">
+              <Shield className="size-3.5" />
+            </span>
+            <span className="font-mono text-xs font-semibold tracking-wider text-white uppercase">
+              FocusFlow Auth
+            </span>
+          </div>
+          <CardTitle className="text-sm font-semibold tracking-wide text-white">
+            管理员鉴权
+          </CardTitle>
+          <CardDescription className="text-xs text-zinc-400">
+            单用户模式：输入系统管理员口令 ADMIN_PASSPHRASE
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4">
           <form action={formAction} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="passphrase">口令</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="passphrase" className="text-xs font-mono uppercase text-zinc-400">
+                PASSPHRASE
+              </Label>
               <Input
                 id="passphrase"
                 name="passphrase"
                 type="password"
                 autoComplete="current-password"
-                placeholder="输入 ADMIN_PASSPHRASE"
+                placeholder="输入管理员口令"
                 required
                 disabled={pending}
+                className="rounded-none border-zinc-800 bg-zinc-950 font-mono text-xs"
               />
             </div>
 
             {state.error ? (
-              <p className="text-sm text-destructive" role="alert">
+              <div
+                className="border border-red-900 bg-red-950/60 px-3 py-2 text-xs font-mono text-red-400"
+                role="alert"
+              >
                 {state.error}
-              </p>
+              </div>
             ) : null}
 
-            <Button type="submit" className="w-full" disabled={pending}>
-              {pending ? "验证中…" : "进入 FocusFlow"}
+            <Button
+              type="submit"
+              className="w-full rounded-none bg-blue-600 text-xs font-mono uppercase tracking-wider text-white hover:bg-blue-500"
+              disabled={pending}
+            >
+              {pending ? "AUTHENTICATING..." : "VERIFY & ENTER"}
             </Button>
           </form>
         </CardContent>
@@ -73,3 +81,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

@@ -6,13 +6,31 @@
 - **环境兼容性**：宿主终端环境为 Windows PowerShell。执行复合命令时，严格使用分号 (`;`) 连接，绝对禁止使用 Linux 的 `&&`。
 - **自我纠错机制**：如果你在运行终端命令时遇到报错，必须自行读取报错日志，分析原因并修正，直到跑通为止，不要立刻抛给人类。
 
-# 2. 视觉与 UI 设计规范 (Design System)
-- **色彩主题**：强制使用全局深色模式 (Dark Mode)。
-- **调色板限制**：
-  - 背景与层级：以深黑 (`#0a0a0a` 或 Tailwind `bg-black/bg-zinc-950`) 和纯白为主。
-  - 主品牌色（强调色）：克莱因蓝 (Klein Blue, `#002FA7` 或 Tailwind 近似色 `blue-700`)，用于主按钮和激活状态。
-  - 高亮/警示色：极少量的鲜艳红色 (如 Tailwind `red-500`)，仅用于删除、严重警告或番茄钟倒计时结束的视觉刺点。
-- **设计风格**：极简前卫、大面积留白（负空间）、无多余的边框线（优先使用阴影或底层级色彩区分）。组件大量使用毛玻璃背景 (`backdrop-blur`)。
+# 2. 视觉与 UI 设计规范 (Pro-Tool / IDE Aesthetic)
+当前 UI 目标：彻底抹除“消费级 SaaS 味”，打造类似 VS Code 和 滴答清单的高信息密度、极简硬核生产力工具界面。
+
+- **绝对禁止的 CSS 属性 (The Kill List)**：
+  - 严禁使用任何圆角：禁止 `rounded-md`, `rounded-lg`, `rounded-xl`，所有组件必须强制覆盖为 `rounded-none`（绝对直角）。
+  - 严禁使用毛玻璃与软阴影：禁止 `backdrop-blur`, `shadow-sm`, `shadow-lg`。所有层级的区分必须使用 1px 的硬实线边框。
+  
+- **色彩规范 (High-Contrast Theme)**：
+  - 全局背景强制为纯黑 `bg-black` (#000000) 或极致深灰 `bg-zinc-950`。
+  - 面板分割线：使用非常暗的灰色 `border-zinc-800` 或 `border-neutral-800`，线宽 1px。
+  - 文字对比度：主标题纯白 `text-white`，次要信息亮灰 `text-zinc-400`。
+  - 重点强调色（Accent）：保持高饱和度的克莱因蓝（如 `bg-blue-600` text-white），用于核心操作按钮（如开启番茄钟）。
+
+- **空间与排版密度 (Information Density)**：
+  - 必须紧凑：减少 Padding。将默认的 `p-6` 或 `p-4` 替换为 `p-3` 或 `p-2`。
+  - 文字字号偏小，使用 `text-sm` 或 `text-xs` 处理列表，取消臃肿的大标题。
+
+- **布局架构 (Three-Pane Layout)**：
+  - 采用经典 IDE 三栏布局：
+    1. 最左侧极窄图标导航栏 (w-16, border-r)。
+    2. 中间资源管理器/清单列表树 (w-64, border-r)。
+    3. 右侧宽大主视图（用于显示日历网格、统计或极简居中的番茄钟）。
+
+- **覆盖 shadcn/ui 默认值**：
+  - 每次使用 shadcn 组件（如 Button, Card, Input）时，必须在 className 中追加 `rounded-none border-zinc-800 shadow-none` 进行物理覆写。
 
 # 3. 技术栈实施规则
 - 使用 Next.js App Router (TypeScript)。

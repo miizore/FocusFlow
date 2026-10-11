@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { BookOpen, GraduationCap, Layers, Plus, Trash2 } from "lucide-react";
+import { BookOpen, Check, Folder, GraduationCap, Layers, Plus, Trash2, ArrowRight } from "lucide-react";
 import type { Project, Task } from "@/db/schema";
 import {
   createProject,
@@ -43,9 +43,9 @@ const TYPE_META: Record<
 const STATUS_FLOW: TaskStatus[] = ["todo", "in_progress", "done"];
 
 const STATUS_LABEL: Record<TaskStatus, string> = {
-  todo: "Todo",
+  todo: "待办",
   in_progress: "进行中",
-  done: "完成",
+  done: "已完成",
 };
 
 function nextStatus(status: TaskStatus): TaskStatus | null {
@@ -80,6 +80,7 @@ export function ProjectsDashboard({
   const [targetUnits, setTargetUnits] = useState("");
   const [taskTitle, setTaskTitle] = useState("");
   const [plannedDate, setPlannedDate] = useState("");
+  const [filterStatus, setFilterStatus] = useState<"all" | TaskStatus>("all");
 
   const selected = useMemo(
     () => projects.find((p) => p.id === selectedId) ?? null,
@@ -90,11 +91,12 @@ export function ProjectsDashboard({
     () =>
       tasks
         .filter((t) => t.projectId === selectedId)
+        .filter((t) => (filterStatus === "all" ? true : t.status === filterStatus))
         .sort((a, b) => {
           const rank = { in_progress: 0, todo: 1, done: 2 } as const;
           return rank[a.status] - rank[b.status];
         }),
-    [tasks, selectedId]
+    [tasks, selectedId, filterStatus]
   );
 
   function refresh() {
@@ -203,262 +205,295 @@ export function ProjectsDashboard({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">Projects & Tasks</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          项目归类驱动每日待办；书籍与网课在任务完成时自动推进进度。
-        </p>
-      </header>
-
-      <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-        <section className="space-y-4">
-          <form
-            onSubmit={handleCreateProject}
-            className="space-y-3 rounded-2xl bg-card/60 p-4 ring-1 ring-white/10 backdrop-blur-xl"
-          >
-            <p className="text-sm font-medium">新建项目</p>
-            <div className="space-y-2">
-              <Label htmlFor="project-name">名称</Label>
-              <Input
-                id="project-name"
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
-                placeholder="例如：深度工作 / 设计模式 / CSAPP"
-                disabled={pending}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>类型</Label>
-              <Select
-                value={projectType}
-                onValueChange={(v) => setProjectType(v as ProjectType)}
-                disabled={pending}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="general">通用分类</SelectItem>
-                  <SelectItem value="book">书籍阅读</SelectItem>
-                  <SelectItem value="course">网课</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {projectType !== "general" ? (
-              <div className="space-y-2">
-                <Label htmlFor="target-units">
-                  {projectType === "book" ? "总页数" : "总集数"}
-                </Label>
-                <Input
-                  id="target-units"
-                  type="number"
-                  min={1}
-                  value={targetUnits}
-                  onChange={(e) => setTargetUnits(e.target.value)}
-                  placeholder={projectType === "book" ? "例如 320" : "例如 24"}
-                  disabled={pending}
-                  required
-                />
-              </div>
-            ) : null}
-            <Button type="submit" className="w-full" disabled={pending}>
-              <Plus data-icon="inline-start" />
-              添加项目
-            </Button>
-          </form>
-
-          <div className="space-y-2">
-            {projects.length === 0 ? (
-              <p className="rounded-2xl bg-muted/40 px-4 py-8 text-center text-sm text-muted-foreground ring-1 ring-white/5">
-                还没有项目。先创建一个分类、书籍或网课。
-              </p>
-            ) : (
-              projects.map((project) => {
-                const meta = TYPE_META[project.type];
-                const Icon = meta.icon;
-                const active = project.id === selectedId;
-                const pct = progressPercent(project);
-
-                return (
-                  <button
-                    key={project.id}
-                    type="button"
-                    onClick={() => setSelectedId(project.id)}
-                    className={cn(
-                      "w-full rounded-2xl p-4 text-left transition-colors ring-1 backdrop-blur-xl",
-                      active
-                        ? "bg-klein/25 ring-klein/50"
-                        : "bg-card/50 ring-white/10 hover:bg-card/80"
-                    )}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex min-w-0 items-start gap-3">
-                        <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/5">
-                          <Icon className="size-4 text-blue-300" />
-                        </span>
-                        <span className="min-w-0">
-                          <span className="block truncate text-sm font-medium">
-                            {project.name}
-                          </span>
-                          <span className="mt-1 block text-xs text-muted-foreground">
-                            {meta.label}
-                            {project.type !== "general"
-                              ? ` · ${project.currentUnits}/${project.targetUnits}`
-                              : null}
-                          </span>
-                        </span>
-                      </div>
-                      <Button
-                        type="button"
-                        size="icon-xs"
-                        variant="ghost"
-                        className="text-muted-foreground hover:text-destructive"
-                        disabled={pending}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteProject(project.id);
-                        }}
-                      >
-                        <Trash2 />
-                      </Button>
-                    </div>
-                    {project.type !== "general" ? (
-                      <div className="mt-3 space-y-1.5">
-                        <Progress value={pct} className="h-1.5" />
-                        <p className="text-[11px] text-muted-foreground">
-                          进度 {pct}%
-                        </p>
-                      </div>
-                    ) : null}
-                  </button>
-                );
-              })
-            )}
+    <div className="flex h-full w-full overflow-hidden bg-black text-zinc-100">
+      {/* Pane 2: Task Tree / Project List (w-72, border-r border-zinc-800) */}
+      <section className="flex w-72 shrink-0 flex-col border-r border-zinc-800 bg-black">
+        {/* Pane Header */}
+        <div className="flex h-9 shrink-0 items-center justify-between border-b border-zinc-800 px-3 bg-zinc-950">
+          <div className="flex items-center gap-1.5">
+            <Folder className="size-3.5 text-zinc-400" />
+            <span className="font-mono text-[11px] font-semibold text-zinc-300 uppercase tracking-wider">
+              PROJECTS ({projects.length})
+            </span>
           </div>
-        </section>
+        </div>
 
-        <section className="min-h-[28rem] rounded-2xl bg-card/50 p-5 ring-1 ring-white/10 backdrop-blur-xl">
-          {!selected ? (
-            <div className="flex h-full min-h-[24rem] items-center justify-center text-sm text-muted-foreground">
-              选择左侧项目以管理待办
+        {/* Project Tree Items */}
+        <div className="flex-1 overflow-y-auto divide-y divide-zinc-900">
+          {projects.length === 0 ? (
+            <div className="p-4 text-center text-xs font-mono text-zinc-600">
+              NO PROJECTS
             </div>
           ) : (
-            <div className="flex h-full flex-col gap-6">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-semibold tracking-tight">
-                      {selected.name}
-                    </h2>
-                    <Badge variant="secondary" className="bg-white/5">
-                      {TYPE_META[selected.type].label}
-                    </Badge>
-                  </div>
-                  {selected.type !== "general" ? (
-                    <p className="text-sm text-muted-foreground">
-                      当前进度 {selected.currentUnits} / {selected.targetUnits}
-                      {selected.type === "book" ? " 页" : " 集"}
-                    </p>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      {projectTasks.length} 条待办
-                    </p>
+            projects.map((project) => {
+              const meta = TYPE_META[project.type];
+              const Icon = meta.icon;
+              const active = project.id === selectedId;
+              const pct = progressPercent(project);
+
+              return (
+                <div
+                  key={project.id}
+                  onClick={() => setSelectedId(project.id)}
+                  className={cn(
+                    "group flex cursor-pointer flex-col gap-1 p-2.5 transition-colors border-l-2",
+                    active
+                      ? "border-l-blue-600 bg-zinc-900/90 text-white"
+                      : "border-l-transparent text-zinc-400 hover:bg-zinc-950 hover:text-zinc-200"
                   )}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <Icon className={cn("size-3.5 shrink-0", active ? "text-blue-500" : "text-zinc-500")} />
+                      <span className="truncate font-mono text-xs font-medium">
+                        {project.name}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      title="删除项目"
+                      disabled={pending}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteProject(project.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-0.5 text-zinc-500 hover:text-red-400 transition-opacity cursor-pointer"
+                    >
+                      <Trash2 className="size-3" />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 pl-5.5">
+                    <span>{meta.label}</span>
+                    {project.type !== "general" ? (
+                      <span>{project.currentUnits}/{project.targetUnits} ({pct}%)</span>
+                    ) : null}
+                  </div>
+
+                  {project.type !== "general" ? (
+                    <div className="mt-1 pl-5.5">
+                      <Progress value={pct} className="h-1" />
+                    </div>
+                  ) : null}
                 </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Create Project Form docked at bottom */}
+        <form
+          onSubmit={handleCreateProject}
+          className="border-t border-zinc-800 bg-black p-3 space-y-2 shrink-0"
+        >
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">
+              NEW PROJECT
+            </span>
+          </div>
+          <Input
+            value={projectName}
+            onChange={(e) => setProjectName(e.target.value)}
+            placeholder="项目名称..."
+            disabled={pending}
+            required
+            className="h-7 text-xs font-mono"
+          />
+          <div className="grid grid-cols-2 gap-1.5">
+            <Select
+              value={projectType}
+              onValueChange={(v) => setProjectType(v as ProjectType)}
+              disabled={pending}
+            >
+              <SelectTrigger size="sm" className="h-7 text-xs font-mono">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="general">通用</SelectItem>
+                <SelectItem value="book">书籍</SelectItem>
+                <SelectItem value="course">网课</SelectItem>
+              </SelectContent>
+            </Select>
+            {projectType !== "general" ? (
+              <Input
+                type="number"
+                min={1}
+                value={targetUnits}
+                onChange={(e) => setTargetUnits(e.target.value)}
+                placeholder="目标总量"
+                disabled={pending}
+                required
+                className="h-7 text-xs font-mono"
+              />
+            ) : (
+              <div className="flex items-center justify-center border border-zinc-900 bg-zinc-950 font-mono text-[10px] text-zinc-600">
+                GENERAL
+              </div>
+            )}
+          </div>
+          <Button type="submit" size="sm" className="w-full h-7 text-xs" disabled={pending}>
+            <Plus data-icon="inline-start" />
+            CREATE
+          </Button>
+        </form>
+      </section>
+
+      {/* Pane 3: Main Workspace (Task List & Detail Grid) */}
+      <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-black">
+        {!selected ? (
+          <div className="flex h-full items-center justify-center font-mono text-xs text-zinc-600">
+            SELECT OR CREATE A PROJECT TO MANAGE TASKS
+          </div>
+        ) : (
+          <div className="flex h-full flex-col overflow-hidden">
+            {/* Top Workspace Header */}
+            <div className="flex h-12 shrink-0 items-center justify-between border-b border-zinc-800 px-4 bg-black">
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-sm font-semibold text-white">
+                  {selected.name}
+                </span>
+                <Badge variant="outline" className="text-[10px]">
+                  {TYPE_META[selected.type].label}
+                </Badge>
+                {selected.type !== "general" ? (
+                  <span className="font-mono text-xs text-zinc-400">
+                    进度：{selected.currentUnits} / {selected.targetUnits}
+                    {selected.type === "book" ? " 页" : " 集"}
+                  </span>
+                ) : null}
               </div>
 
-              <form
-                onSubmit={handleCreateTask}
-                className="grid gap-3 rounded-xl bg-black/30 p-3 ring-1 ring-white/5 sm:grid-cols-[1fr_auto_auto]"
-              >
-                <Input
-                  value={taskTitle}
-                  onChange={(e) => setTaskTitle(e.target.value)}
-                  placeholder="添加今日待办…"
-                  disabled={pending}
-                  required
-                />
-                <Input
-                  type="date"
-                  value={plannedDate}
-                  onChange={(e) => setPlannedDate(e.target.value)}
-                  disabled={pending}
-                  className="sm:w-40"
-                />
-                <Button type="submit" disabled={pending}>
-                  <Plus data-icon="inline-start" />
-                  添加
-                </Button>
-              </form>
+              {/* Status Filter Tabs */}
+              <div className="flex items-center gap-1 font-mono text-xs">
+                {(["all", "todo", "in_progress", "done"] as const).map((st) => (
+                  <button
+                    key={st}
+                    type="button"
+                    onClick={() => setFilterStatus(st)}
+                    className={cn(
+                      "px-2 py-1 uppercase transition-colors cursor-pointer border",
+                      filterStatus === st
+                        ? "border-blue-600 bg-blue-600/20 text-white"
+                        : "border-transparent text-zinc-500 hover:text-zinc-300"
+                    )}
+                  >
+                    {st === "all" ? "全部" : STATUS_LABEL[st]}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-              <div className="flex-1 space-y-2">
-                {projectTasks.length === 0 ? (
-                  <p className="py-12 text-center text-sm text-muted-foreground">
-                    该项目暂无待办。添加第一条任务开始流转。
-                  </p>
-                ) : (
-                  projectTasks.map((task) => {
+            {/* Quick Add Task Input Bar */}
+            <form
+              onSubmit={handleCreateTask}
+              className="flex shrink-0 items-center gap-2 border-b border-zinc-800 bg-zinc-950 p-2.5"
+            >
+              <Input
+                value={taskTitle}
+                onChange={(e) => setTaskTitle(e.target.value)}
+                placeholder={`在「${selected.name}」中添加待办任务...`}
+                disabled={pending}
+                required
+                className="flex-1 font-mono text-xs"
+              />
+              <Input
+                type="date"
+                value={plannedDate}
+                onChange={(e) => setPlannedDate(e.target.value)}
+                disabled={pending}
+                className="w-36 font-mono text-xs"
+              />
+              <Button type="submit" size="sm" disabled={pending}>
+                <Plus data-icon="inline-start" />
+                ADD TASK
+              </Button>
+            </form>
+
+            <div className="flex-1 overflow-y-auto">
+              {projectTasks.length === 0 ? (
+                <div className="flex h-48 flex-col items-center justify-center font-mono text-xs text-zinc-600">
+                  <span>NO TASKS UNDER CURRENT FILTER</span>
+                  <span className="text-[11px] text-zinc-700 mt-1">添加一条待办开始流转</span>
+                </div>
+              ) : (
+                <div className="divide-y divide-zinc-900">
+                  {projectTasks.map((task) => {
                     const next = nextStatus(task.status);
                     return (
                       <div
                         key={task.id}
-                        className="flex flex-wrap items-center gap-3 rounded-xl bg-black/25 px-3 py-3 ring-1 ring-white/5"
+                        className={cn(
+                          "group flex items-center justify-between gap-3 px-4 py-3 hover:bg-zinc-950 transition-colors",
+                          task.status === "done" && "opacity-60 bg-black"
+                        )}
                       >
-                        <div className="min-w-0 flex-1">
-                          <p
+                        <div className="flex min-w-0 items-center gap-3">
+                          <span
                             className={cn(
-                              "truncate text-sm font-medium",
-                              task.status === "done" &&
-                                "text-muted-foreground line-through"
+                              "size-2 shrink-0",
+                              task.status === "done"
+                                ? "bg-zinc-700"
+                                : task.status === "in_progress"
+                                ? "bg-amber-500"
+                                : "bg-blue-600"
                             )}
-                          >
-                            {task.title}
-                          </p>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {STATUS_LABEL[task.status]}
-                            {task.plannedDate
-                              ? ` · 计划 ${task.plannedDate}`
-                              : null}
-                          </p>
+                          />
+                          <div className="min-w-0">
+                            <p
+                              className={cn(
+                                "truncate font-mono text-xs font-medium text-zinc-200",
+                                task.status === "done" && "line-through text-zinc-500"
+                              )}
+                            >
+                              {task.title}
+                            </p>
+                            <div className="flex items-center gap-2 mt-0.5 font-mono text-[10px] text-zinc-500">
+                              <span>状态: {STATUS_LABEL[task.status]}</span>
+                              {task.plannedDate ? (
+                                <span>· 计划: {task.plannedDate}</span>
+                              ) : null}
+                            </div>
+                          </div>
                         </div>
+
                         <div className="flex items-center gap-2">
                           {next ? (
                             <Button
                               type="button"
-                              size="sm"
+                              size="xs"
                               variant={next === "done" ? "default" : "outline"}
                               disabled={pending}
                               onClick={() => handleAdvanceStatus(task)}
                             >
-                              → {STATUS_LABEL[next]}
+                              <ArrowRight data-icon="inline-end" />
+                              {STATUS_LABEL[next]}
                             </Button>
                           ) : (
-                            <Badge className="bg-klein/30 text-blue-100">
-                              Done
+                            <Badge variant="secondary" className="text-[10px]">
+                              <Check className="size-3" /> DONE
                             </Badge>
                           )}
                           <Button
                             type="button"
-                            size="icon-sm"
+                            size="icon-xs"
                             variant="ghost"
-                            className="text-muted-foreground hover:text-destructive"
+                            className="text-zinc-600 hover:text-red-400"
                             disabled={pending}
                             onClick={() => handleDeleteTask(task.id)}
+                            title="删除任务"
                           >
-                            <Trash2 />
+                            <Trash2 className="size-3" />
                           </Button>
                         </div>
                       </div>
                     );
-                  })
-                )}
-              </div>
+                  })}
+                </div>
+              )}
             </div>
-          )}
-        </section>
-      </div>
+          </div>
+        )}
+      </section>
     </div>
   );
 }

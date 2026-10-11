@@ -6,14 +6,15 @@ import { FocusWorkspace } from "@/components/focus/focus-workspace";
 
 function FocusSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-8">
-      <div className="space-y-2">
-        <div className="h-9 w-56 animate-pulse rounded-lg bg-white/5" />
-        <div className="h-4 w-80 max-w-full animate-pulse rounded bg-white/5" />
+    <div className="flex h-full w-full bg-black">
+      <div className="flex-1 p-6 space-y-6">
+        <div className="h-6 w-32 bg-zinc-900 animate-pulse" />
+        <div className="h-32 w-64 bg-zinc-900 animate-pulse mx-auto" />
       </div>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="h-64 animate-pulse rounded-2xl bg-white/5" />
-        <div className="h-64 animate-pulse rounded-2xl bg-white/5" />
+      <div className="w-96 border-l border-zinc-800 p-4 space-y-4">
+        <div className="h-4 w-24 bg-zinc-900 animate-pulse" />
+        <div className="h-16 w-full bg-zinc-900 animate-pulse" />
+        <div className="h-16 w-full bg-zinc-900 animate-pulse" />
       </div>
     </div>
   );
@@ -31,17 +32,17 @@ async function FocusContent() {
   const timeline = timelineResult.success ? (timelineResult.data ?? []) : [];
 
   return (
-    <div className="space-y-4">
+    <div className="flex h-full w-full flex-col">
       {!projectsResult.success ||
       !tasksResult.success ||
       !timelineResult.success ? (
-        <p className="rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive ring-1 ring-destructive/30">
-          数据加载失败：
+        <div className="border-b border-red-900 bg-red-950/60 px-4 py-2 text-xs font-mono text-red-400">
+          DATA_LOAD_ERROR:{" "}
           {projectsResult.error ||
             tasksResult.error ||
             timelineResult.error ||
-            "未知错误"}
-        </p>
+            "UNKNOWN"}
+        </div>
       ) : null}
       <FocusWorkspace
         projects={projects}
@@ -59,3 +60,4 @@ export default function FocusPage() {
     </Suspense>
   );
 }
+

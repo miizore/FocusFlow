@@ -1,9 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Pause, PictureInPicture2, Play, Square } from "lucide-react";
+import { VerticalTimeline } from "./vertical-timeline";
 import type { Project, Task } from "@/db/schema";
 import type { FocusTimelineItem } from "@/app/actions/focus";
 import {
@@ -28,6 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -310,267 +312,218 @@ export function FocusWorkspace({
   const active = Boolean(activeTaskId);
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-      <header className="space-y-2">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-semibold tracking-tight">Focus & Timeline</h1>
-          {inTauri ? (
-            <Badge variant="outline" className="border-klein text-blue-300">
-              Tauri 原生桌面增强
-            </Badge>
-          ) : null}
-        </div>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          正计时驱动时间轴。不足 5 分钟丢弃；超过 4 小时截断；补录必须通过冲突检测。
-        </p>
-      </header>
-
-      <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="space-y-5 rounded-2xl bg-card/55 p-6 ring-1 ring-white/10 backdrop-blur-xl">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <p className="text-xs tracking-[0.18em] text-muted-foreground uppercase">
-                Live Timer
-              </p>
-              <p className="mt-2 font-mono text-5xl font-semibold tracking-tight text-foreground tabular-nums">
-                {formatDuration(elapsedSeconds)}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge
-                className={
-                  active
-                    ? isPaused
-                      ? "bg-amber-500/20 text-amber-100"
-                      : "bg-klein/40 text-blue-100"
-                    : "bg-white/5 text-muted-foreground"
-                }
-              >
-                {!active ? "空闲" : isPaused ? "已暂停" : "专注中"}
-              </Badge>
-            </div>
+    <div className="flex h-full w-full overflow-hidden bg-black text-zinc-100">
+      {/* Center Main Stage: Giant Minimalist Timer + Controls + Docked Manual Log */}
+      <section className="flex flex-1 flex-col justify-between border-r border-zinc-800 bg-black p-6 overflow-y-auto">
+        {/* Top Status & Mini-Timer bar */}
+        <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
+                "size-2",
+                active
+                  ? isPaused
+                    ? "bg-amber-500"
+                    : "bg-blue-500 animate-pulse"
+                  : "bg-zinc-700"
+              )}
+            />
+            <span className="font-mono text-xs uppercase tracking-wider text-zinc-400">
+              FOCUS ENGINE // {!active ? "IDLE" : isPaused ? "PAUSED" : "ACTIVE"}
+            </span>
           </div>
 
-          {active ? (
-            <div className="rounded-xl bg-black/30 px-4 py-3 ring-1 ring-white/5">
-              <p className="text-sm font-medium">{activeTaskTitle}</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {activeProjectName}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <Label>选择待办</Label>
-              <Select
-                value={selectedTaskId}
-                onValueChange={setSelectedTaskId}
-                disabled={pending || taskOptions.length === 0}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="选择要专注的任务" />
-                </SelectTrigger>
-                <SelectContent>
-                  {taskOptions.map((task) => (
-                    <SelectItem key={task.id} value={task.id}>
-                      {task.projectName} · {task.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {taskOptions.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  没有可专注的未完成待办，请先在 Projects 中创建。
-                </p>
-              ) : null}
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {inTauri ? (
+              <Badge variant="outline" className="border-blue-600 text-blue-400 text-[10px]">
+                TAURI
+              </Badge>
+            ) : null}
+            <Button
+              variant="outline"
+              size="xs"
+              onClick={handleOpenMiniTimer}
+              title="�����ö�����С��"
+            >
+              <PictureInPicture2 data-icon="inline-start" />
+              MINI-TIMER
+            </Button>
+          </div>
+        </div>
 
-          <div className="flex flex-wrap gap-2">
-            {!active ? (
-              <Button onClick={handleStart} disabled={pending || !selectedTaskId}>
-                <Play data-icon="inline-start" />
-                开始专注
-              </Button>
+        {/* Center: Giant Minimalist Digital Clock */}
+        <div className="flex flex-col items-center justify-center my-auto py-8 space-y-6">
+          <div className="text-center space-y-2">
+            <p className="font-mono text-7xl md:text-8xl lg:text-9xl font-bold tracking-tighter text-white tabular-nums select-none">
+              {formatDuration(elapsedSeconds)}
+            </p>
+            {active ? (
+              <div className="inline-flex items-center gap-2 border border-zinc-800 bg-zinc-950 px-3 py-1 font-mono text-xs">
+                <span className="text-blue-400 font-semibold">{activeProjectName}</span>
+                <span className="text-zinc-600">/</span>
+                <span className="text-zinc-200">{activeTaskTitle}</span>
+              </div>
             ) : (
-              <>
+              <p className="font-mono text-xs text-zinc-500 uppercase tracking-widest">
+                SELECT A TASK TO START SESSION
+              </p>
+            )}
+          </div>
+
+          {/* Action Button Bar */}
+          <div className="flex flex-col items-center gap-3 w-full max-w-sm">
+            {!active ? (
+              <div className="w-full space-y-2.5">
+                <Select
+                  value={selectedTaskId}
+                  onValueChange={setSelectedTaskId}
+                  disabled={pending || taskOptions.length === 0}
+                >
+                  <SelectTrigger className="w-full font-mono text-xs h-8">
+                    <SelectValue placeholder="选择要专注的任务" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {taskOptions.map((task) => (
+                      <SelectItem key={task.id} value={task.id}>
+                        {task.projectName} / {task.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Button
+                  onClick={handleStart}
+                  disabled={pending || !selectedTaskId}
+                  className="w-full h-9 text-xs font-mono font-semibold uppercase tracking-widest bg-blue-600 hover:bg-blue-500 text-white"
+                >
+                  <Play data-icon="inline-start" />
+                  START FOCUS
+                </Button>
+              </div>
+            ) : (
+              <div className="flex w-full items-center gap-2">
                 {isPaused ? (
-                  <Button onClick={resumeTimer} disabled={pending}>
+                  <Button
+                    onClick={resumeTimer}
+                    disabled={pending}
+                    className="flex-1 h-9 text-xs font-mono uppercase tracking-wider bg-blue-600 hover:bg-blue-500 text-white"
+                  >
                     <Play data-icon="inline-start" />
-                    继续
+                    RESUME
                   </Button>
                 ) : (
-                  <Button variant="outline" onClick={pauseTimer} disabled={pending}>
+                  <Button
+                    variant="outline"
+                    onClick={pauseTimer}
+                    disabled={pending}
+                    className="flex-1 h-9 text-xs font-mono uppercase tracking-wider"
+                  >
                     <Pause data-icon="inline-start" />
-                    暂停
+                    PAUSE
                   </Button>
                 )}
                 <Button
                   variant="destructive"
                   onClick={handleStop}
                   disabled={pending}
+                  className="flex-1 h-9 text-xs font-mono uppercase tracking-wider"
                 >
                   <Square data-icon="inline-start" />
-                  结束
+                  FINISH
                 </Button>
-                <Button
-                  variant="secondary"
-                  onClick={handleOpenMiniTimer}
-                  title="唤起置顶悬浮小窗"
-                >
-                  <PictureInPicture2 data-icon="inline-start" />
-                  悬浮小窗
-                </Button>
-              </>
+              </div>
             )}
           </div>
         </div>
 
-        <form
-          onSubmit={handleManualSubmit}
-          className="space-y-4 rounded-2xl bg-card/55 p-6 ring-1 ring-white/10 backdrop-blur-xl"
-        >
-          <div>
-            <h2 className="text-lg font-medium tracking-tight">手动补录</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              为过去的时间段补记专注，会自动进行无重叠冲突检测。
-            </p>
-          </div>
+        {/* Bottom Dock: Manual Record Form */}
+        <div className="border-t border-zinc-800 pt-3 bg-black">
+          <form onSubmit={handleManualSubmit} className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+                MANUAL LOG // 历史补录
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const end = new Date();
+                  const start = new Date(end.getTime() - 25 * 60 * 1000);
+                  setManualStart(toLocalInputValue(start));
+                  setManualEnd(toLocalInputValue(end));
+                }}
+                className="font-mono text-[10px] text-blue-400 hover:underline cursor-pointer"
+              >
+                +25M PAST
+              </button>
+            </div>
 
-          <div className="space-y-2">
-            <Label>关联待办</Label>
-            <Select
-              value={manualTaskId}
-              onValueChange={setManualTaskId}
-              disabled={pending || taskOptions.length === 0}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="选择待办任务" />
-              </SelectTrigger>
-              <SelectContent>
-                {taskOptions.map((task) => (
-                  <SelectItem key={task.id} value={task.id}>
-                    {task.projectName} · {task.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <Select
+                value={manualTaskId}
+                onValueChange={setManualTaskId}
+                disabled={pending || taskOptions.length === 0}
+              >
+                <SelectTrigger className="font-mono text-xs h-7">
+                  <SelectValue placeholder="选择待办任务" />
+                </SelectTrigger>
+                <SelectContent>
+                  {taskOptions.map((task) => (
+                    <SelectItem key={task.id} value={task.id}>
+                      {task.projectName} / {task.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="manual-start">开始时间</Label>
               <Input
-                id="manual-start"
                 type="datetime-local"
                 value={manualStart}
                 onChange={(e) => setManualStart(e.target.value)}
                 disabled={pending}
+                className="h-7 font-mono text-xs"
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="manual-end">结束时间</Label>
-              <Input
-                id="manual-end"
-                type="datetime-local"
-                value={manualEnd}
-                onChange={(e) => setManualEnd(e.target.value)}
-                disabled={pending}
-              />
-            </div>
-          </div>
 
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={pending}
-              onClick={() => {
-                const end = new Date();
-                const start = new Date(end.getTime() - 25 * 60 * 1000);
-                setManualStart(toLocalInputValue(start));
-                setManualEnd(toLocalInputValue(end));
-              }}
-            >
-              填入过去 25 分钟
-            </Button>
-          </div>
-
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={pending || !manualTaskId || !manualStart || !manualEnd}
-          >
-            提交补录
-          </Button>
-        </form>
-      </section>
-
-      <section className="space-y-4 rounded-2xl bg-card/55 p-6 ring-1 ring-white/10 backdrop-blur-xl">
-        <div>
-          <h2 className="text-lg font-medium tracking-tight">时间轴 (Timeline)</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            所有沉淀下来的专注记录，严格按时间倒序收敛。
-          </p>
-        </div>
-
-        {timeline.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            暂无有效专注记录。开启正计时或手动补录一段历史专注。
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {timeline.map((item) => (
-              <div
-                key={item.id}
-                className="flex flex-col gap-2 rounded-xl bg-black/25 p-4 ring-1 ring-white/5 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{item.taskTitle}</span>
-                    <Badge variant="outline" className="text-[11px]">
-                      {item.projectName}
-                    </Badge>
-                    {item.isManual ? (
-                      <Badge variant="secondary" className="text-[10px]">
-                        手动补录
-                      </Badge>
-                    ) : null}
-                  </div>
-                  <p className="text-xs text-muted-foreground font-mono">
-                    {new Date(item.startedAt).toLocaleString("zh-CN", {
-                      month: "2-digit",
-                      day: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}{" "}
-                    ~{" "}
-                    {new Date(item.endedAt).toLocaleTimeString("zh-CN", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
-                </div>
-
-                <div className="font-mono text-sm font-medium text-blue-200">
-                  {formatDuration(item.duration)}
-                </div>
+              <div className="flex gap-1.5">
+                <Input
+                  type="datetime-local"
+                  value={manualEnd}
+                  onChange={(e) => setManualEnd(e.target.value)}
+                  disabled={pending}
+                  className="h-7 font-mono text-xs flex-1"
+                />
+                <Button
+                  type="submit"
+                  size="xs"
+                  className="h-7 px-3 text-[10px] shrink-0 font-mono uppercase"
+                  disabled={pending || !manualTaskId || !manualStart || !manualEnd}
+                >
+                  SUBMIT
+                </Button>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          </form>
+        </div>
       </section>
 
+      {/* Right Pane: 24h Vertical Timeline */}
+      <VerticalTimeline timeline={timeline} />
+
+      {/* Fragment Dialog (< 5 minutes discard warning) */}
       <Dialog open={fragmentOpen} onOpenChange={setFragmentOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>时间过短，视为碎片时间丢弃</DialogTitle>
+            <DialogTitle>专注时间过短，视为碎片丢弃</DialogTitle>
             <DialogDescription>
-              本次专注时长不足 5 分钟（300 秒），根据 PRD 硬性规则，系统不会向数据库写入任何碎片记录。保持深度专注，下次再接再厉！
+              本次正计时时长不足 5 分钟（300 秒）。根据硬性规则，系统拒绝向数据库写入任何碎片记录。
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button onClick={() => setFragmentOpen(false)}>知道了</Button>
+            <Button
+              onClick={() => setFragmentOpen(false)}
+              className="bg-blue-600 hover:bg-blue-500 text-white font-mono text-xs"
+            >
+              CONFIRM
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

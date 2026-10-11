@@ -38,6 +38,18 @@
 *   `is_manual`: boolean, default false (是否为手动补录)
 *   `created_at`: timestamp
 
+### 2.4 `habits` 表 (日常习惯追踪)
+*   `id`: uuid, primary key, defaultRandom
+*   `name`: varchar(255), not null
+*   `created_at`: timestamp with timezone, defaultNow, not null
+
+### 2.5 `habit_logs` 表 (习惯打卡流水)
+*   `id`: uuid, primary key, defaultRandom
+*   `habit_id`: uuid, foreign key references `habits(id)` on delete cascade, not null
+*   `date`: varchar(10), not null (格式 YYYY-MM-DD)
+*   `completed`: boolean, default false, not null
+*   `created_at`: timestamp with timezone, defaultNow, not null
+
 ## 3. 核心机制设计与 API 规范
 
 ### 3.1 Next.js 架构分层

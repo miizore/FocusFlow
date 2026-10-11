@@ -1,3 +1,4 @@
+// Drizzle Schema
 import { pgTable, uuid, varchar, text, integer, timestamp, date, boolean, pgEnum } from 'drizzle-orm/pg-core';
 
 export const projectTypeEnum = pgEnum('project_type', ['general', 'book', 'course']);
@@ -31,9 +32,27 @@ export const focusSessions = pgTable('focus_sessions', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+export const habits = pgTable('habits', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 255 }).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const habitLogs = pgTable('habit_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  habitId: uuid('habit_id').references(() => habits.id, { onDelete: 'cascade' }).notNull(),
+  date: date('date').notNull(),
+  completed: boolean('completed').default(false).notNull(),
+});
+
 export type Project = typeof projects.$inferSelect;
 export type NewProject = typeof projects.$inferInsert;
 export type Task = typeof tasks.$inferSelect;
 export type NewTask = typeof tasks.$inferInsert;
 export type FocusSession = typeof focusSessions.$inferSelect;
 export type NewFocusSession = typeof focusSessions.$inferInsert;
+export type Habit = typeof habits.$inferSelect;
+export type NewHabit = typeof habits.$inferInsert;
+export type HabitLog = typeof habitLogs.$inferSelect;
+export type NewHabitLog = typeof habitLogs.$inferInsert;
+
