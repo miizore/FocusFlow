@@ -1,0 +1,20 @@
+[package]
+name = "focusflow-desktop"
+version = "0.1.0"
+description = "FocusFlow Minimal Desktop Container"
+authors = ["FocusFlow"]
+edition = "2021"
+
+[lib]
+name = "focusflow_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.1", features = [] }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+log = "0.4"
+tauri = { version = "2.1", features = ["tray-icon"] }
+tauri-plugin-log = "2"
